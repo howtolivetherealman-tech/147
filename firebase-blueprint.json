@@ -1,0 +1,359 @@
+{
+  "entities": {
+    "Admin": {
+      "title": "Admin",
+      "description": "Super Admin account record for NETI BHARATHAM portal governance.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "username": { "type": "string", "minLength": 3, "maxLength": 64 },
+        "email": { "type": "string", "format": "email", "maxLength": 128 },
+        "role": { "type": "string", "enum": ["SUPER_ADMIN"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "username", "email", "role", "createdAt"]
+    },
+    "Reporter": {
+      "title": "Reporter",
+      "description": "Operational profile for a registered press reporter (non-confidential fields).",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "uid": { "type": "string", "maxLength": 128 },
+        "reporterId": { "type": "string", "maxLength": 64 },
+        "username": { "type": "string", "minLength": 3, "maxLength": 64 },
+        "fullName": { "type": "string", "minLength": 2, "maxLength": 120 },
+        "gender": { "type": "string", "enum": ["Male", "Female", "Other"] },
+        "mobile": { "type": "string", "minLength": 10, "maxLength": 15 },
+        "stateId": { "type": "string", "maxLength": 64 },
+        "stateName": { "type": "string", "maxLength": 100 },
+        "districtId": { "type": "string", "maxLength": 64 },
+        "districtName": { "type": "string", "maxLength": 100 },
+        "mandalId": { "type": "string", "maxLength": 64 },
+        "mandalName": { "type": "string", "maxLength": 100 },
+        "villageTown": { "type": "string", "maxLength": 120 },
+        "photoUrl": { "type": "string", "maxLength": 2048 },
+        "status": { "type": "string", "enum": ["PENDING", "APPROVED", "REJECTED", "EXPIRED", "SUSPENDED"] },
+        "rejectionRemarks": { "type": "string", "maxLength": 500 },
+        "approvedAt": { "type": "string", "maxLength": 64 },
+        "expiresAt": { "type": "string", "maxLength": 64 },
+        "createdAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["id", "username", "fullName", "mobile", "stateId", "districtId", "mandalId", "status", "createdAt"]
+    },
+    "ReporterPrivateDocument": {
+      "title": "ReporterPrivateDocument",
+      "description": "Strictly isolated PII, residential address, DOB, and Aadhaar document for a reporter.",
+      "type": "object",
+      "properties": {
+        "reporterDocId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "uid": { "type": "string", "maxLength": 128 },
+        "fatherSpouseName": { "type": "string", "maxLength": 120 },
+        "dob": { "type": "string", "maxLength": 32 },
+        "whatsappNumber": { "type": "string", "maxLength": 15 },
+        "email": { "type": "string", "format": "email", "maxLength": 128 },
+        "residentialAddress": { "type": "string", "maxLength": 500 },
+        "pinCode": { "type": "string", "maxLength": 10 },
+        "experience": { "type": "string", "maxLength": 200 },
+        "previousOrganization": { "type": "string", "maxLength": 200 },
+        "aadhaarDocUrl": { "type": "string", "maxLength": 4096 },
+        "termsConsent": { "type": "boolean" },
+        "updatedAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["reporterDocId", "fatherSpouseName", "dob", "email", "residentialAddress", "pinCode", "aadhaarDocUrl", "termsConsent"]
+    },
+    "ReporterPublicIdCard": {
+      "title": "ReporterPublicIdCard",
+      "description": "Public QR verification record exposing ONLY approved press identity fields and never exposing Aadhaar or residential address.",
+      "type": "object",
+      "properties": {
+        "reporterId": { "type": "string", "maxLength": 64, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "fullName": { "type": "string", "maxLength": 120 },
+        "designation": { "type": "string", "enum": ["PRESS REPORTER"] },
+        "photoUrl": { "type": "string", "maxLength": 2048 },
+        "stateName": { "type": "string", "maxLength": 100 },
+        "districtName": { "type": "string", "maxLength": 100 },
+        "mandalName": { "type": "string", "maxLength": 100 },
+        "mobile": { "type": "string", "maxLength": 15 },
+        "issuedAt": { "type": "string", "maxLength": 64 },
+        "expiresAt": { "type": "string", "maxLength": 64 },
+        "status": { "type": "string", "enum": ["ACTIVE", "EXPIRED", "SUSPENDED"] }
+      },
+      "required": ["reporterId", "fullName", "designation", "stateName", "districtName", "mandalName", "issuedAt", "expiresAt", "status"]
+    },
+    "StateEntity": {
+      "title": "StateEntity",
+      "description": "Indian State or Union Territory in administrative hierarchy.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "code": { "type": "string", "maxLength": 10 },
+        "nameEn": { "type": "string", "maxLength": 100 },
+        "nameTe": { "type": "string", "maxLength": 100 },
+        "type": { "type": "string", "enum": ["STATE", "UT"] },
+        "subdivisionTerm": { "type": "string", "enum": ["Mandal", "Tehsil", "Taluk", "Block", "Sub-Division"] },
+        "active": { "type": "boolean" }
+      },
+      "required": ["id", "code", "nameEn", "nameTe", "type", "subdivisionTerm", "active"]
+    },
+    "DistrictEntity": {
+      "title": "DistrictEntity",
+      "description": "District belonging to an Indian State or Union Territory.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "stateId": { "type": "string", "maxLength": 64 },
+        "nameEn": { "type": "string", "maxLength": 100 },
+        "nameTe": { "type": "string", "maxLength": 100 },
+        "active": { "type": "boolean" }
+      },
+      "required": ["id", "stateId", "nameEn", "nameTe", "active"]
+    },
+    "MandalEntity": {
+      "title": "MandalEntity",
+      "description": "Mandal, Tehsil, Taluk, or Block belonging to a District.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "stateId": { "type": "string", "maxLength": 64 },
+        "districtId": { "type": "string", "maxLength": 64 },
+        "nameEn": { "type": "string", "maxLength": 100 },
+        "nameTe": { "type": "string", "maxLength": 100 },
+        "divisionType": { "type": "string", "maxLength": 32 },
+        "active": { "type": "boolean" }
+      },
+      "required": ["id", "stateId", "districtId", "nameEn", "nameTe", "active"]
+    },
+    "NewsArticle": {
+      "title": "NewsArticle",
+      "description": "News article uploaded by an approved reporter or Super Admin.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "slug": { "type": "string", "maxLength": 200 },
+        "headline": { "type": "string", "minLength": 5, "maxLength": 300 },
+        "subheadline": { "type": "string", "maxLength": 500 },
+        "content": { "type": "string", "minLength": 10, "maxLength": 100000 },
+        "categoryId": { "type": "string", "maxLength": 64 },
+        "categoryName": { "type": "string", "maxLength": 100 },
+        "scope": { "type": "string", "enum": ["NATIONAL", "INTERNATIONAL", "STATE", "DISTRICT", "MANDAL"] },
+        "stateId": { "type": "string", "maxLength": 64 },
+        "stateName": { "type": "string", "maxLength": 100 },
+        "districtId": { "type": "string", "maxLength": 64 },
+        "districtName": { "type": "string", "maxLength": 100 },
+        "mandalId": { "type": "string", "maxLength": 64 },
+        "mandalName": { "type": "string", "maxLength": 100 },
+        "villageTown": { "type": "string", "maxLength": 120 },
+        "featuredImage": { "type": "string", "maxLength": 4096 },
+        "imageCaption": { "type": "string", "maxLength": 300 },
+        "videoUrl": { "type": "string", "maxLength": 1024 },
+        "seoTitle": { "type": "string", "maxLength": 200 },
+        "seoDescription": { "type": "string", "maxLength": 500 },
+        "language": { "type": "string", "enum": ["te", "en"] },
+        "isBreaking": { "type": "boolean" },
+        "isFeatured": { "type": "boolean" },
+        "isTrending": { "type": "boolean" },
+        "views": { "type": "number" },
+        "reporterId": { "type": "string", "maxLength": 64 },
+        "reporterName": { "type": "string", "maxLength": 120 },
+        "authorUid": { "type": "string", "maxLength": 128 },
+        "status": { "type": "string", "enum": ["PENDING", "PUBLISHED", "REJECTED", "UNPUBLISHED"] },
+        "createdAt": { "type": "string", "maxLength": 64 },
+        "updatedAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["id", "slug", "headline", "content", "categoryId", "stateId", "reporterId", "status", "createdAt"]
+    },
+    "NewsCategory": {
+      "title": "NewsCategory",
+      "description": "Manageable news category in NETI BHARATHAM.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "slug": { "type": "string", "maxLength": 64 },
+        "nameEn": { "type": "string", "maxLength": 100 },
+        "nameTe": { "type": "string", "maxLength": 100 },
+        "order": { "type": "number" },
+        "active": { "type": "boolean" }
+      },
+      "required": ["id", "slug", "nameEn", "nameTe", "order", "active"]
+    },
+    "Advertisement": {
+      "title": "Advertisement",
+      "description": "Private advertisement submitted by a reporter or managed by Admin (max 2 images).",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "title": { "type": "string", "maxLength": 200 },
+        "businessName": { "type": "string", "maxLength": 200 },
+        "contactNumber": { "type": "string", "maxLength": 20 },
+        "description": { "type": "string", "maxLength": 1000 },
+        "image1": { "type": "string", "maxLength": 4096 },
+        "image2": { "type": "string", "maxLength": 4096 },
+        "linkUrl": { "type": "string", "maxLength": 1024 },
+        "targetStateId": { "type": "string", "maxLength": 64 },
+        "targetDistrictId": { "type": "string", "maxLength": 64 },
+        "targetMandalId": { "type": "string", "maxLength": 64 },
+        "startDate": { "type": "string", "maxLength": 64 },
+        "expiryDate": { "type": "string", "maxLength": 64 },
+        "position": { "type": "string", "enum": ["HEADER", "HOMEPAGE_BANNER", "SIDEBAR", "ARTICLE_INLINE", "FOOTER"] },
+        "priceAmount": { "type": "number" },
+        "paymentStatus": { "type": "string", "enum": ["PENDING", "PAID", "WAIVED"] },
+        "reporterId": { "type": "string", "maxLength": 64 },
+        "status": { "type": "string", "enum": ["PENDING", "ACTIVE", "REJECTED", "INACTIVE"] },
+        "createdAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["id", "title", "businessName", "contactNumber", "image1", "startDate", "expiryDate", "reporterId", "status", "createdAt"]
+    },
+    "WebsiteSettings": {
+      "title": "WebsiteSettings",
+      "description": "Global website branding, contact details, ticker, and policy content managed by Super Admin.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64 },
+        "siteNameEn": { "type": "string", "maxLength": 120 },
+        "siteNameTe": { "type": "string", "maxLength": 120 },
+        "domain": { "type": "string", "maxLength": 120 },
+        "contactEmail": { "type": "string", "maxLength": 120 },
+        "location": { "type": "string", "maxLength": 200 },
+        "emergencyContact": { "type": "string", "maxLength": 100 },
+        "breakingTickerText": { "type": "string", "maxLength": 1000 },
+        "primaryColor": { "type": "string", "maxLength": 32 },
+        "secondaryColor": { "type": "string", "maxLength": 32 },
+        "aboutUsContent": { "type": "string", "maxLength": 20000 },
+        "privacyPolicyContent": { "type": "string", "maxLength": 20000 },
+        "termsContent": { "type": "string", "maxLength": 20000 },
+        "disclaimerContent": { "type": "string", "maxLength": 20000 },
+        "updatedAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["id", "siteNameEn", "siteNameTe", "domain", "contactEmail", "location"]
+    },
+    "AdSenseSettings": {
+      "title": "AdSenseSettings",
+      "description": "Google AdSense configuration controlled exclusively by Super Admin.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64 },
+        "enabled": { "type": "boolean" },
+        "publisherId": { "type": "string", "maxLength": 100 },
+        "adClientId": { "type": "string", "maxLength": 100 },
+        "headerSlotId": { "type": "string", "maxLength": 64 },
+        "homepageSlotId": { "type": "string", "maxLength": 64 },
+        "articleSlotId": { "type": "string", "maxLength": 64 },
+        "sidebarSlotId": { "type": "string", "maxLength": 64 },
+        "footerSlotId": { "type": "string", "maxLength": 64 },
+        "mobilePlacementEnabled": { "type": "boolean" },
+        "desktopPlacementEnabled": { "type": "boolean" },
+        "updatedAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["id", "enabled"]
+    },
+    "NotificationItem": {
+      "title": "NotificationItem",
+      "description": "Notification sent to a reporter or admin regarding approvals, rejections, or expiry reminders.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "recipientId": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 200 },
+        "message": { "type": "string", "maxLength": 1000 },
+        "type": { "type": "string", "enum": ["APPROVAL", "REJECTION", "EXPIRY_REMINDER", "RENEWAL", "SYSTEM"] },
+        "read": { "type": "boolean" },
+        "createdAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["id", "recipientId", "title", "message", "type", "read", "createdAt"]
+    },
+    "AuditLog": {
+      "title": "AuditLog",
+      "description": "Immutable security and operational audit log for Super Admin and Reporter actions.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "actorId": { "type": "string", "maxLength": 128 },
+        "actorRole": { "type": "string", "enum": ["SUPER_ADMIN", "REPORTER", "SYSTEM"] },
+        "action": { "type": "string", "maxLength": 120 },
+        "targetType": { "type": "string", "maxLength": 64 },
+        "targetId": { "type": "string", "maxLength": 128 },
+        "details": { "type": "string", "maxLength": 1000 },
+        "createdAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["id", "actorId", "actorRole", "action", "targetType", "targetId", "createdAt"]
+    },
+    "MembershipRenewal": {
+      "title": "MembershipRenewal",
+      "description": "Record of a 6-month reporter membership validity renewal by Super Admin.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "reporterId": { "type": "string", "maxLength": 64 },
+        "previousExpiry": { "type": "string", "maxLength": 64 },
+        "newExpiry": { "type": "string", "maxLength": 64 },
+        "renewedBy": { "type": "string", "maxLength": 128 },
+        "remarks": { "type": "string", "maxLength": 500 },
+        "renewedAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["id", "reporterId", "previousExpiry", "newExpiry", "renewedBy", "renewedAt"]
+    }
+  },
+  "firestore": {
+    "/admins/{adminId}": {
+      "schema": { "$ref": "#/entities/Admin" },
+      "description": "Super Admin account credentials and roles."
+    },
+    "/reporters/{reporterId}": {
+      "schema": { "$ref": "#/entities/Reporter" },
+      "description": "Reporter operational profiles."
+    },
+    "/reporterPrivateDocuments/{reporterId}": {
+      "schema": { "$ref": "#/entities/ReporterPrivateDocument" },
+      "description": "Confidential PII, Aadhaar documents, and residential addresses of reporters."
+    },
+    "/reporterIds/{cardNumber}": {
+      "schema": { "$ref": "#/entities/ReporterPublicIdCard" },
+      "description": "Public QR verification lookup records containing only approved public press identity fields."
+    },
+    "/states/{stateId}": {
+      "schema": { "$ref": "#/entities/StateEntity" },
+      "description": "Indian States and Union Territories."
+    },
+    "/districts/{districtId}": {
+      "schema": { "$ref": "#/entities/DistrictEntity" },
+      "description": "Districts mapped to States/UTs."
+    },
+    "/mandals/{mandalId}": {
+      "schema": { "$ref": "#/entities/MandalEntity" },
+      "description": "Mandals/Tehsils/Taluks/Blocks mapped to Districts."
+    },
+    "/news/{newsId}": {
+      "schema": { "$ref": "#/entities/NewsArticle" },
+      "description": "News articles with location hierarchy and approval status."
+    },
+    "/newsCategories/{categoryId}": {
+      "schema": { "$ref": "#/entities/NewsCategory" },
+      "description": "Manageable news categories."
+    },
+    "/advertisements/{adId}": {
+      "schema": { "$ref": "#/entities/Advertisement" },
+      "description": "Private advertisements with up to 2 images."
+    },
+    "/websiteSettings/{settingId}": {
+      "schema": { "$ref": "#/entities/WebsiteSettings" },
+      "description": "Global website branding, contact details, and policy pages."
+    },
+    "/adSenseSettings/{settingId}": {
+      "schema": { "$ref": "#/entities/AdSenseSettings" },
+      "description": "Google AdSense configuration."
+    },
+    "/notifications/{notificationId}": {
+      "schema": { "$ref": "#/entities/NotificationItem" },
+      "description": "Reporter and Admin notifications."
+    },
+    "/auditLogs/{logId}": {
+      "schema": { "$ref": "#/entities/AuditLog" },
+      "description": "System and Admin audit trail."
+    },
+    "/membershipRenewals/{renewalId}": {
+      "schema": { "$ref": "#/entities/MembershipRenewal" },
+      "description": "Six-month reporter validity renewal logs."
+    }
+  }
+}

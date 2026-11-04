@@ -1,0 +1,51 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --bg-canvas: #ffffff;
+    --bg-surface: #f8fafc;
+    --text-primary: #090d16;
+    --text-secondary: #475569;
+    --brand-red: #b91c1c;
+    --brand-navy: #0f172a;
+    --font-telugu-sans: 'Noto Sans Telugu', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    --font-sans: 'Plus Jakarta Sans', 'Noto Sans Telugu', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+  }
+
+  body {
+    background-color: var(--bg-canvas);
+    color: var(--text-primary);
+    font-family: var(--font-telugu-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3, h4 {
+    text-wrap: balance;
+  }
+}
+
+@keyframes ticker-scroll {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+.animate-breaking-ticker {
+  display: inline-flex;
+  white-space: nowrap;
+  animation: ticker-scroll 38s linear infinite;
+}
+
+.animate-breaking-ticker:hover {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-breaking-ticker {
+    animation: none;
+  }
+}

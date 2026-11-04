@@ -1,0 +1,470 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Default-Deny Catch-All
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // =========================================================================
+    // PRIMITIVE HELPERS
+    // =========================================================================
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null && request.auth.token.email_verified == true;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == 'brkr1042@gmail.com' ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    // =========================================================================
+    // VALIDATION BLUEPRINTS
+    // =========================================================================
+    function isValidAdmin(data) {
+      return data.keys().hasAll(['uid', 'username', 'email', 'role', 'createdAt']) &&
+        data.keys().hasOnly(['uid', 'username', 'email', 'role', 'createdAt']) &&
+        data.uid is string && data.uid.size() >= 1 && data.uid.size() <= 128 &&
+        data.username is string && data.username.size() >= 3 && data.username.size() <= 64 &&
+        data.email is string && data.email.size() >= 5 && data.email.size() <= 128 &&
+        data.role == 'SUPER_ADMIN' &&
+        data.createdAt is string && data.createdAt.size() <= 64;
+    }
+
+    function isValidReporter(data) {
+      return data.keys().hasAll(['id', 'uid', 'username', 'fullName', 'gender', 'mobile', 'stateId', 'stateName', 'districtId', 'districtName', 'mandalId', 'mandalName', 'villageTown', 'photoUrl', 'status', 'createdAt']) &&
+        data.keys().hasOnly(['id', 'uid', 'reporterId', 'username', 'fullName', 'gender', 'mobile', 'stateId', 'stateName', 'districtId', 'districtName', 'mandalId', 'mandalName', 'villageTown', 'photoUrl', 'status', 'rejectionRemarks', 'approvedAt', 'expiresAt', 'createdAt']) &&
+        data.id is string && data.id.size() >= 1 && data.id.size() <= 128 &&
+        data.uid is string && data.uid.size() >= 1 && data.uid.size() <= 128 &&
+        data.username is string && data.username.size() >= 3 && data.username.size() <= 64 &&
+        data.fullName is string && data.fullName.size() >= 2 && data.fullName.size() <= 120 &&
+        data.gender in ['Male', 'Female', 'Other'] &&
+        data.mobile is string && data.mobile.size() >= 10 && data.mobile.size() <= 15 &&
+        data.stateId is string && data.stateId.size() <= 64 &&
+        data.stateName is string && data.stateName.size() <= 100 &&
+        data.districtId is string && data.districtId.size() <= 64 &&
+        data.districtName is string && data.districtName.size() <= 100 &&
+        data.mandalId is string && data.mandalId.size() <= 64 &&
+        data.mandalName is string && data.mandalName.size() <= 100 &&
+        data.villageTown is string && data.villageTown.size() <= 120 &&
+        data.photoUrl is string && data.photoUrl.size() <= 2048 &&
+        data.status in ['PENDING', 'APPROVED', 'REJECTED', 'EXPIRED', 'SUSPENDED'] &&
+        data.createdAt is string && data.createdAt.size() <= 64;
+    }
+
+    function isValidReporterPrivateDoc(data) {
+      return data.keys().hasAll(['reporterDocId', 'uid', 'fatherSpouseName', 'dob', 'whatsappNumber', 'email', 'residentialAddress', 'pinCode', 'experience', 'previousOrganization', 'aadhaarDocUrl', 'termsConsent', 'updatedAt']) &&
+        data.keys().hasOnly(['reporterDocId', 'uid', 'fatherSpouseName', 'dob', 'whatsappNumber', 'email', 'residentialAddress', 'pinCode', 'experience', 'previousOrganization', 'aadhaarDocUrl', 'termsConsent', 'updatedAt']) &&
+        data.reporterDocId is string && data.reporterDocId.size() >= 1 && data.reporterDocId.size() <= 128 &&
+        data.uid is string && data.uid.size() >= 1 && data.uid.size() <= 128 &&
+        data.fatherSpouseName is string && data.fatherSpouseName.size() >= 2 && data.fatherSpouseName.size() <= 120 &&
+        data.dob is string && data.dob.size() <= 32 &&
+        data.whatsappNumber is string && data.whatsappNumber.size() <= 15 &&
+        data.email is string && data.email.size() >= 5 && data.email.size() <= 128 &&
+        data.residentialAddress is string && data.residentialAddress.size() >= 5 && data.residentialAddress.size() <= 500 &&
+        data.pinCode is string && data.pinCode.size() >= 6 && data.pinCode.size() <= 10 &&
+        data.experience is string && data.experience.size() <= 200 &&
+        data.previousOrganization is string && data.previousOrganization.size() <= 200 &&
+        data.aadhaarDocUrl is string && data.aadhaarDocUrl.size() >= 5 && data.aadhaarDocUrl.size() <= 4096 &&
+        data.termsConsent == true &&
+        data.updatedAt is string && data.updatedAt.size() <= 64;
+    }
+
+    function isValidPublicIdCard(data) {
+      return data.keys().hasAll(['reporterId', 'fullName', 'designation', 'photoUrl', 'stateName', 'districtName', 'mandalName', 'mobile', 'issuedAt', 'expiresAt', 'status']) &&
+        data.keys().hasOnly(['reporterId', 'fullName', 'designation', 'photoUrl', 'stateName', 'districtName', 'mandalName', 'mobile', 'issuedAt', 'expiresAt', 'status']) &&
+        data.reporterId is string && data.reporterId.size() >= 3 && data.reporterId.size() <= 64 &&
+        data.fullName is string && data.fullName.size() >= 2 && data.fullName.size() <= 120 &&
+        data.designation == 'PRESS REPORTER' &&
+        data.photoUrl is string && data.photoUrl.size() <= 2048 &&
+        data.stateName is string && data.stateName.size() <= 100 &&
+        data.districtName is string && data.districtName.size() <= 100 &&
+        data.mandalName is string && data.mandalName.size() <= 100 &&
+        data.mobile is string && data.mobile.size() <= 15 &&
+        data.issuedAt is string && data.issuedAt.size() <= 64 &&
+        data.expiresAt is string && data.expiresAt.size() <= 64 &&
+        data.status in ['ACTIVE', 'EXPIRED', 'SUSPENDED'];
+    }
+
+    function isValidStateEntity(data) {
+      return data.keys().hasAll(['id', 'code', 'nameEn', 'nameTe', 'type', 'subdivisionTerm', 'active']) &&
+        data.keys().hasOnly(['id', 'code', 'nameEn', 'nameTe', 'type', 'subdivisionTerm', 'active']) &&
+        data.id is string && data.id.size() <= 64 &&
+        data.code is string && data.code.size() <= 10 &&
+        data.nameEn is string && data.nameEn.size() <= 100 &&
+        data.nameTe is string && data.nameTe.size() <= 100 &&
+        data.type in ['STATE', 'UT'] &&
+        data.subdivisionTerm in ['Mandal', 'Tehsil', 'Taluk', 'Block', 'Sub-Division'] &&
+        data.active is bool;
+    }
+
+    function isValidDistrictEntity(data) {
+      return data.keys().hasAll(['id', 'stateId', 'nameEn', 'nameTe', 'active']) &&
+        data.keys().hasOnly(['id', 'stateId', 'nameEn', 'nameTe', 'active']) &&
+        data.id is string && data.id.size() <= 64 &&
+        data.stateId is string && data.stateId.size() <= 64 &&
+        data.nameEn is string && data.nameEn.size() <= 100 &&
+        data.nameTe is string && data.nameTe.size() <= 100 &&
+        data.active is bool;
+    }
+
+    function isValidMandalEntity(data) {
+      return data.keys().hasAll(['id', 'stateId', 'districtId', 'nameEn', 'nameTe', 'divisionType', 'active']) &&
+        data.keys().hasOnly(['id', 'stateId', 'districtId', 'nameEn', 'nameTe', 'divisionType', 'active']) &&
+        data.id is string && data.id.size() <= 64 &&
+        data.stateId is string && data.stateId.size() <= 64 &&
+        data.districtId is string && data.districtId.size() <= 64 &&
+        data.nameEn is string && data.nameEn.size() <= 100 &&
+        data.nameTe is string && data.nameTe.size() <= 100 &&
+        data.divisionType is string && data.divisionType.size() <= 32 &&
+        data.active is bool;
+    }
+
+    function isValidNewsArticle(data) {
+      return data.keys().hasAll(['id', 'slug', 'headline', 'subheadline', 'content', 'categoryId', 'categoryName', 'scope', 'stateId', 'stateName', 'districtId', 'districtName', 'mandalId', 'mandalName', 'villageTown', 'featuredImage', 'imageCaption', 'videoUrl', 'seoTitle', 'seoDescription', 'language', 'isBreaking', 'isFeatured', 'isTrending', 'views', 'reporterId', 'reporterName', 'authorUid', 'status', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['id', 'slug', 'headline', 'subheadline', 'content', 'categoryId', 'categoryName', 'scope', 'stateId', 'stateName', 'districtId', 'districtName', 'mandalId', 'mandalName', 'villageTown', 'featuredImage', 'imageCaption', 'videoUrl', 'seoTitle', 'seoDescription', 'language', 'isBreaking', 'isFeatured', 'isTrending', 'views', 'reporterId', 'reporterName', 'authorUid', 'status', 'createdAt', 'updatedAt']) &&
+        data.id is string && data.id.size() <= 128 &&
+        data.slug is string && data.slug.size() <= 200 &&
+        data.headline is string && data.headline.size() >= 5 && data.headline.size() <= 300 &&
+        data.subheadline is string && data.subheadline.size() <= 500 &&
+        data.content is string && data.content.size() >= 10 && data.content.size() <= 100000 &&
+        data.categoryId is string && data.categoryId.size() <= 64 &&
+        data.categoryName is string && data.categoryName.size() <= 100 &&
+        data.scope in ['NATIONAL', 'INTERNATIONAL', 'STATE', 'DISTRICT', 'MANDAL'] &&
+        data.stateId is string && data.stateId.size() <= 64 &&
+        data.stateName is string && data.stateName.size() <= 100 &&
+        data.districtId is string && data.districtId.size() <= 64 &&
+        data.districtName is string && data.districtName.size() <= 100 &&
+        data.mandalId is string && data.mandalId.size() <= 64 &&
+        data.mandalName is string && data.mandalName.size() <= 100 &&
+        data.villageTown is string && data.villageTown.size() <= 120 &&
+        data.featuredImage is string && data.featuredImage.size() <= 4096 &&
+        data.imageCaption is string && data.imageCaption.size() <= 300 &&
+        data.videoUrl is string && data.videoUrl.size() <= 1024 &&
+        data.seoTitle is string && data.seoTitle.size() <= 200 &&
+        data.seoDescription is string && data.seoDescription.size() <= 500 &&
+        data.language in ['te', 'en'] &&
+        data.isBreaking is bool &&
+        data.isFeatured is bool &&
+        data.isTrending is bool &&
+        data.views is number && data.views >= 0 &&
+        data.reporterId is string && data.reporterId.size() <= 64 &&
+        data.reporterName is string && data.reporterName.size() <= 120 &&
+        data.authorUid is string && data.authorUid.size() <= 128 &&
+        data.status in ['PENDING', 'PUBLISHED', 'REJECTED', 'UNPUBLISHED'] &&
+        data.createdAt is string && data.createdAt.size() <= 64 &&
+        data.updatedAt is string && data.updatedAt.size() <= 64;
+    }
+
+    function isValidCategory(data) {
+      return data.keys().hasAll(['id', 'slug', 'nameEn', 'nameTe', 'order', 'active']) &&
+        data.keys().hasOnly(['id', 'slug', 'nameEn', 'nameTe', 'order', 'active']) &&
+        data.id is string && data.id.size() <= 64 &&
+        data.slug is string && data.slug.size() <= 64 &&
+        data.nameEn is string && data.nameEn.size() <= 100 &&
+        data.nameTe is string && data.nameTe.size() <= 100 &&
+        data.order is number &&
+        data.active is bool;
+    }
+
+    function isValidAdvertisement(data) {
+      return data.keys().hasAll(['id', 'title', 'businessName', 'contactNumber', 'description', 'image1', 'image2', 'linkUrl', 'targetStateId', 'targetDistrictId', 'targetMandalId', 'startDate', 'expiryDate', 'position', 'priceAmount', 'paymentStatus', 'reporterId', 'status', 'createdAt']) &&
+        data.keys().hasOnly(['id', 'title', 'businessName', 'contactNumber', 'description', 'image1', 'image2', 'linkUrl', 'targetStateId', 'targetDistrictId', 'targetMandalId', 'startDate', 'expiryDate', 'position', 'priceAmount', 'paymentStatus', 'reporterId', 'status', 'createdAt']) &&
+        data.id is string && data.id.size() <= 128 &&
+        data.title is string && data.title.size() >= 2 && data.title.size() <= 200 &&
+        data.businessName is string && data.businessName.size() >= 2 && data.businessName.size() <= 200 &&
+        data.contactNumber is string && data.contactNumber.size() >= 10 && data.contactNumber.size() <= 20 &&
+        data.description is string && data.description.size() <= 1000 &&
+        data.image1 is string && data.image1.size() <= 4096 &&
+        data.image2 is string && data.image2.size() <= 4096 &&
+        data.linkUrl is string && data.linkUrl.size() <= 1024 &&
+        data.targetStateId is string && data.targetStateId.size() <= 64 &&
+        data.targetDistrictId is string && data.targetDistrictId.size() <= 64 &&
+        data.targetMandalId is string && data.targetMandalId.size() <= 64 &&
+        data.startDate is string && data.startDate.size() <= 64 &&
+        data.expiryDate is string && data.expiryDate.size() <= 64 &&
+        data.position in ['HEADER', 'HOMEPAGE_BANNER', 'SIDEBAR', 'ARTICLE_INLINE', 'FOOTER'] &&
+        data.priceAmount is number && data.priceAmount >= 0 &&
+        data.paymentStatus in ['PENDING', 'PAID', 'WAIVED'] &&
+        data.reporterId is string && data.reporterId.size() <= 64 &&
+        data.status in ['PENDING', 'ACTIVE', 'REJECTED', 'INACTIVE'] &&
+        data.createdAt is string && data.createdAt.size() <= 64;
+    }
+
+    function isValidWebsiteSettings(data) {
+      return data.keys().hasAll(['id', 'siteNameEn', 'siteNameTe', 'domain', 'contactEmail', 'location', 'emergencyContact', 'breakingTickerText', 'primaryColor', 'secondaryColor', 'aboutUsContent', 'privacyPolicyContent', 'termsContent', 'disclaimerContent', 'updatedAt']) &&
+        data.keys().hasOnly(['id', 'siteNameEn', 'siteNameTe', 'domain', 'contactEmail', 'location', 'emergencyContact', 'breakingTickerText', 'primaryColor', 'secondaryColor', 'aboutUsContent', 'privacyPolicyContent', 'termsContent', 'disclaimerContent', 'updatedAt']) &&
+        data.id is string && data.id.size() <= 64 &&
+        data.siteNameEn is string && data.siteNameEn.size() <= 120 &&
+        data.siteNameTe is string && data.siteNameTe.size() <= 120 &&
+        data.domain is string && data.domain.size() <= 120 &&
+        data.contactEmail is string && data.contactEmail.size() <= 120 &&
+        data.location is string && data.location.size() <= 200 &&
+        data.emergencyContact is string && data.emergencyContact.size() <= 100 &&
+        data.breakingTickerText is string && data.breakingTickerText.size() <= 1000 &&
+        data.primaryColor is string && data.primaryColor.size() <= 32 &&
+        data.secondaryColor is string && data.secondaryColor.size() <= 32 &&
+        data.aboutUsContent is string && data.aboutUsContent.size() <= 20000 &&
+        data.privacyPolicyContent is string && data.privacyPolicyContent.size() <= 20000 &&
+        data.termsContent is string && data.termsContent.size() <= 20000 &&
+        data.disclaimerContent is string && data.disclaimerContent.size() <= 20000 &&
+        data.updatedAt is string && data.updatedAt.size() <= 64;
+    }
+
+    function isValidAdSenseSettings(data) {
+      return data.keys().hasAll(['id', 'enabled', 'publisherId', 'adClientId', 'headerSlotId', 'homepageSlotId', 'articleSlotId', 'sidebarSlotId', 'footerSlotId', 'mobilePlacementEnabled', 'desktopPlacementEnabled', 'updatedAt']) &&
+        data.keys().hasOnly(['id', 'enabled', 'publisherId', 'adClientId', 'headerSlotId', 'homepageSlotId', 'articleSlotId', 'sidebarSlotId', 'footerSlotId', 'mobilePlacementEnabled', 'desktopPlacementEnabled', 'updatedAt']) &&
+        data.id is string && data.id.size() <= 64 &&
+        data.enabled is bool &&
+        data.publisherId is string && data.publisherId.size() <= 100 &&
+        data.adClientId is string && data.adClientId.size() <= 100 &&
+        data.headerSlotId is string && data.headerSlotId.size() <= 64 &&
+        data.homepageSlotId is string && data.homepageSlotId.size() <= 64 &&
+        data.articleSlotId is string && data.articleSlotId.size() <= 64 &&
+        data.sidebarSlotId is string && data.sidebarSlotId.size() <= 64 &&
+        data.footerSlotId is string && data.footerSlotId.size() <= 64 &&
+        data.mobilePlacementEnabled is bool &&
+        data.desktopPlacementEnabled is bool &&
+        data.updatedAt is string && data.updatedAt.size() <= 64;
+    }
+
+    function isValidNotification(data) {
+      return data.keys().hasAll(['id', 'recipientId', 'title', 'message', 'type', 'read', 'createdAt']) &&
+        data.keys().hasOnly(['id', 'recipientId', 'title', 'message', 'type', 'read', 'createdAt']) &&
+        data.id is string && data.id.size() <= 128 &&
+        data.recipientId is string && data.recipientId.size() <= 128 &&
+        data.title is string && data.title.size() <= 200 &&
+        data.message is string && data.message.size() <= 1000 &&
+        data.type in ['APPROVAL', 'REJECTION', 'EXPIRY_REMINDER', 'RENEWAL', 'SYSTEM'] &&
+        data.read is bool &&
+        data.createdAt is string && data.createdAt.size() <= 64;
+    }
+
+    function isValidAuditLog(data) {
+      return data.keys().hasAll(['id', 'actorId', 'actorRole', 'action', 'targetType', 'targetId', 'details', 'createdAt']) &&
+        data.keys().hasOnly(['id', 'actorId', 'actorRole', 'action', 'targetType', 'targetId', 'details', 'createdAt']) &&
+        data.id is string && data.id.size() <= 128 &&
+        data.actorId is string && data.actorId.size() <= 128 &&
+        data.actorRole in ['SUPER_ADMIN', 'REPORTER', 'SYSTEM'] &&
+        data.action is string && data.action.size() <= 120 &&
+        data.targetType is string && data.targetType.size() <= 64 &&
+        data.targetId is string && data.targetId.size() <= 128 &&
+        data.details is string && data.details.size() <= 1000 &&
+        data.createdAt is string && data.createdAt.size() <= 64;
+    }
+
+    function isValidMembershipRenewal(data) {
+      return data.keys().hasAll(['id', 'reporterId', 'previousExpiry', 'newExpiry', 'renewedBy', 'remarks', 'renewedAt']) &&
+        data.keys().hasOnly(['id', 'reporterId', 'previousExpiry', 'newExpiry', 'renewedBy', 'remarks', 'renewedAt']) &&
+        data.id is string && data.id.size() <= 128 &&
+        data.reporterId is string && data.reporterId.size() <= 64 &&
+        data.previousExpiry is string && data.previousExpiry.size() <= 64 &&
+        data.newExpiry is string && data.newExpiry.size() <= 64 &&
+        data.renewedBy is string && data.renewedBy.size() <= 128 &&
+        data.remarks is string && data.remarks.size() <= 500 &&
+        data.renewedAt is string && data.renewedAt.size() <= 64;
+    }
+
+    // =========================================================================
+    // COLLECTION RULES
+    // =========================================================================
+
+    // 1. Admins
+    match /admins/{adminId} {
+      allow get: if isValidId(adminId) && isAdmin();
+      allow list: if isAdmin();
+      allow create: if isValidId(adminId) && isValidAdmin(incoming()) && isAdmin();
+      allow update: if isValidId(adminId) && isValidAdmin(incoming()) && isAdmin() && incoming().uid == existing().uid;
+      allow delete: if isValidId(adminId) && isAdmin();
+    }
+
+    // 2. Reporters (Operational Profile)
+    match /reporters/{reporterId} {
+      allow get: if isValidId(reporterId) && isSignedIn() && (existing().uid == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (resource.data.uid == request.auth.uid || isAdmin());
+      allow create: if isValidId(reporterId) && isSignedIn() && isValidReporter(incoming()) && (
+        (incoming().uid == request.auth.uid && incoming().status == 'PENDING') || isAdmin()
+      );
+      allow update: if isValidId(reporterId) && isSignedIn() && isValidReporter(incoming()) && isAdmin();
+      allow delete: if isValidId(reporterId) && isAdmin();
+    }
+
+    // 3. Reporter Private Documents (Strictly Isolated PII & Aadhaar)
+    match /reporterPrivateDocuments/{reporterId} {
+      allow get: if isValidId(reporterId) && isSignedIn() && (existing().uid == request.auth.uid || isAdmin());
+      allow list: if isAdmin();
+      allow create: if isValidId(reporterId) && isSignedIn() && isValidReporterPrivateDoc(incoming()) && (
+        (incoming().uid == request.auth.uid && existsAfter(/databases/$(database)/documents/reporters/$(reporterId))) || isAdmin()
+      );
+      allow update: if isValidId(reporterId) && isSignedIn() && isValidReporterPrivateDoc(incoming()) && (
+        isAdmin() || (
+          existing().uid == request.auth.uid &&
+          incoming().uid == existing().uid &&
+          incoming().reporterDocId == existing().reporterDocId &&
+          incoming().diff(existing()).affectedKeys().hasOnly(['residentialAddress', 'updatedAt'])
+        )
+      );
+      allow delete: if isValidId(reporterId) && isAdmin();
+    }
+
+    // 4. Public Reporter ID Cards (QR Verification Lookup - Public Safe Fields Only)
+    match /reporterIds/{cardNumber} {
+      allow get: if isValidId(cardNumber);
+      allow list: if isAdmin();
+      allow create: if isValidId(cardNumber) && isValidPublicIdCard(incoming()) && isAdmin();
+      allow update: if isValidId(cardNumber) && isValidPublicIdCard(incoming()) && isAdmin();
+      allow delete: if isValidId(cardNumber) && isAdmin();
+    }
+
+    // 5. States
+    match /states/{stateId} {
+      allow get: if isValidId(stateId) && (existing().active == true || isAdmin());
+      allow list: if resource.data.active == true || isAdmin();
+      allow create: if isValidId(stateId) && isValidStateEntity(incoming()) && isAdmin();
+      allow update: if isValidId(stateId) && isValidStateEntity(incoming()) && isAdmin();
+      allow delete: if isValidId(stateId) && isAdmin();
+    }
+
+    // 6. Districts
+    match /districts/{districtId} {
+      allow get: if isValidId(districtId) && (existing().active == true || isAdmin());
+      allow list: if resource.data.active == true || isAdmin();
+      allow create: if isValidId(districtId) && isValidDistrictEntity(incoming()) && isAdmin() && exists(/databases/$(database)/documents/states/$(incoming().stateId));
+      allow update: if isValidId(districtId) && isValidDistrictEntity(incoming()) && isAdmin();
+      allow delete: if isValidId(districtId) && isAdmin();
+    }
+
+    // 7. Mandals
+    match /mandals/{mandalId} {
+      allow get: if isValidId(mandalId) && (existing().active == true || isAdmin());
+      allow list: if resource.data.active == true || isAdmin();
+      allow create: if isValidId(mandalId) && isValidMandalEntity(incoming()) && isAdmin() && exists(/databases/$(database)/documents/districts/$(incoming().districtId));
+      allow update: if isValidId(mandalId) && isValidMandalEntity(incoming()) && isAdmin();
+      allow delete: if isValidId(mandalId) && isAdmin();
+    }
+
+    // 8. News Articles
+    match /news/{newsId} {
+      allow get: if isValidId(newsId) && (
+        existing().status == 'PUBLISHED' ||
+        (isSignedIn() && existing().authorUid == request.auth.uid) ||
+        isAdmin()
+      );
+      allow list: if resource.data.status == 'PUBLISHED' ||
+        (isSignedIn() && resource.data.authorUid == request.auth.uid) ||
+        isAdmin();
+      allow create: if isValidId(newsId) && isSignedIn() && isValidNewsArticle(incoming()) && (
+        isAdmin() || (
+          incoming().authorUid == request.auth.uid &&
+          incoming().status in ['PUBLISHED', 'PENDING'] &&
+          exists(/databases/$(database)/documents/reporters/$(request.auth.uid)) &&
+          get(/databases/$(database)/documents/reporters/$(request.auth.uid)).data.status == 'APPROVED'
+        )
+      );
+      allow update: if isValidId(newsId) && isSignedIn() && isValidNewsArticle(incoming()) && isAdmin();
+      allow delete: if isValidId(newsId) && isAdmin();
+    }
+
+    // 9. News Categories
+    match /newsCategories/{categoryId} {
+      allow get: if isValidId(categoryId) && (existing().active == true || isAdmin());
+      allow list: if resource.data.active == true || isAdmin();
+      allow create: if isValidId(categoryId) && isValidCategory(incoming()) && isAdmin();
+      allow update: if isValidId(categoryId) && isValidCategory(incoming()) && isAdmin();
+      allow delete: if isValidId(categoryId) && isAdmin();
+    }
+
+    // 10. Private Advertisements
+    match /advertisements/{adId} {
+      allow get: if isValidId(adId) && (
+        existing().status == 'ACTIVE' ||
+        (isSignedIn() && existing().reporterId == request.auth.uid) ||
+        isAdmin()
+      );
+      allow list: if resource.data.status == 'ACTIVE' ||
+        (isSignedIn() && resource.data.reporterId == request.auth.uid) ||
+        isAdmin();
+      allow create: if isValidId(adId) && isSignedIn() && isValidAdvertisement(incoming()) && (
+        isAdmin() || (
+          incoming().status in ['ACTIVE', 'PENDING'] &&
+          incoming().paymentStatus in ['PAID', 'PENDING', 'WAIVED'] &&
+          exists(/databases/$(database)/documents/reporters/$(request.auth.uid)) &&
+          get(/databases/$(database)/documents/reporters/$(request.auth.uid)).data.status == 'APPROVED'
+        )
+      );
+      allow update: if isValidId(adId) && isSignedIn() && isValidAdvertisement(incoming()) && isAdmin();
+      allow delete: if isValidId(adId) && isAdmin();
+    }
+
+    // 11. Website Settings
+    match /websiteSettings/{settingId} {
+      allow get: if isValidId(settingId);
+      allow list: if isAdmin();
+      allow create: if isValidId(settingId) && isValidWebsiteSettings(incoming()) && isAdmin();
+      allow update: if isValidId(settingId) && isValidWebsiteSettings(incoming()) && isAdmin();
+      allow delete: if isValidId(settingId) && isAdmin();
+    }
+
+    // 12. Google AdSense Settings
+    match /adSenseSettings/{settingId} {
+      allow get: if isValidId(settingId) && (existing().enabled == true || isAdmin());
+      allow list: if isAdmin();
+      allow create: if isValidId(settingId) && isValidAdSenseSettings(incoming()) && isAdmin();
+      allow update: if isValidId(settingId) && isValidAdSenseSettings(incoming()) && isAdmin();
+      allow delete: if isValidId(settingId) && isAdmin();
+    }
+
+    // 13. Notifications
+    match /notifications/{notificationId} {
+      allow get: if isValidId(notificationId) && isSignedIn() && (existing().recipientId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (resource.data.recipientId == request.auth.uid || isAdmin());
+      allow create: if isValidId(notificationId) && isValidNotification(incoming()) && isAdmin();
+      allow update: if isValidId(notificationId) && isSignedIn() && isValidNotification(incoming()) && (
+        isAdmin() || (
+          existing().recipientId == request.auth.uid &&
+          incoming().recipientId == existing().recipientId &&
+          incoming().diff(existing()).affectedKeys().hasOnly(['read'])
+        )
+      );
+      allow delete: if isValidId(notificationId) && isAdmin();
+    }
+
+    // 14. Audit Logs (Immutable after creation)
+    match /auditLogs/{logId} {
+      allow get: if isValidId(logId) && isAdmin();
+      allow list: if isAdmin();
+      allow create: if isValidId(logId) && isSignedIn() && isValidAuditLog(incoming()) && (
+        isAdmin() || incoming().actorId == request.auth.uid
+      );
+      allow update, delete: if false;
+    }
+
+    // 15. Membership Renewals
+    match /membershipRenewals/{renewalId} {
+      allow get: if isValidId(renewalId) && isAdmin();
+      allow list: if isAdmin();
+      allow create: if isValidId(renewalId) && isValidMembershipRenewal(incoming()) && isAdmin();
+      allow update, delete: if false;
+    }
+
+    // Connection test endpoint
+    match /test/connection {
+      allow get: if true;
+    }
+  }
+}

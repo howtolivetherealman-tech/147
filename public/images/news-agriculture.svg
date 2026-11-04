@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+  <defs>
+    <linearGradient id="agri" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#14532D" />
+      <stop offset="60%" stop-color="#166534" />
+      <stop offset="100%" stop-color="#0F172A" />
+    </linearGradient>
+  </defs>
+  <rect width="800" height="600" fill="url(#agri)" />
+  <circle cx="650" cy="140" r="65" fill="#F59E0B" fill-opacity="0.35" />
+  <path d="M0 420 Q250 350 500 420 T800 390 L800 600 L0 600 Z" fill="#15803D" fill-opacity="0.5" />
+  <path d="M0 480 Q300 430 600 490 T800 460 L800 600 L0 600 Z" fill="#052E16" fill-opacity="0.8" />
+</svg>

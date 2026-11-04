@@ -1,0 +1,10 @@
+{
+  "name": "Remix NETI BHARATHAM – నేటి భారతం",
+  "description": "Official Telugu Digital News Portal (netibhaaratham.com) based in Hyderabad, Telangana. Breaking National, State, District \u0026 Mandal News, Press Reporter Portal, Digital ID Card Verification, and Super Admin CMS.",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
